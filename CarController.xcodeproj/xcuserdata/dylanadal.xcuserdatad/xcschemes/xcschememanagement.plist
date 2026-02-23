@@ -6,8 +6,28 @@
 	<dict>
 		<key>CarController.xcscheme_^#shared#^_</key>
 		<dict>
+			<key>isShown</key>
+			<true/>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>37EBDD912F46083C00C762B2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>37EBDD9E2F46083E00C762B2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>37EBDDA82F46083E00C762B2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
