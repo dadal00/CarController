@@ -9,6 +9,9 @@ import SwiftUI
 
 @main
 struct CarControllerApp: App {
+    // state object is used when we want to track changes and show them in the visuals
+    @StateObject var bluetoothManager = BluetoothManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
