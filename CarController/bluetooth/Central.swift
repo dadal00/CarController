@@ -130,6 +130,15 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
             print("Failed to write to \(characteristic.uuid.uuidString): \(error.localizedDescription)")
+            print("Characteristic \(characteristic.uuid) properties: \(characteristic.properties)")
+            if characteristic.properties.contains(.write) {
+                print("Can write with response")
+            }
+            print("past")
+            if characteristic.properties.contains(.writeWithoutResponse) {
+                print("Can write without response")
+            }
+            print("past")
         } else {
             print("Successfully wrote to \(characteristic.uuid.uuidString)")
         }
@@ -148,6 +157,6 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         
         let command: [UInt8] = [throttle, steering]
         let data = Data(command)
-        carPeripheral!.writeValue(data, for: controlCharacteristic!, type: .withResponse)
+        carPeripheral!.writeValue(data, for: controlCharacteristic!, type: .withoutResponse)
     }
 }
