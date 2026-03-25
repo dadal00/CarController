@@ -32,6 +32,8 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
             service.characteristics = [control]
             peripheralManager.add(service)
             peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [IDs.car]])
+            
+            print("Initialized.")
         }
     }
     
@@ -39,12 +41,10 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
                            didReceiveWrite requests: [CBATTRequest]) {
         for request in requests {
             guard let value = request.value else { continue }
+            let bytes = [UInt8](value)
             
-            if request.characteristic.uuid == IDs.control {
-                let bytes = [UInt8](value)
-                if bytes.count >= 2 {
-                    print("Throttle: \(bytes[0]), Steering: \(bytes[1])")
-                }
+            if request.characteristic.uuid == IDs.control && bytes.count >= 2 {
+                print("Throttle: \(bytes[0]), Steering: \(bytes[1])")
             } else {
                 print("Received unknown value: \(String(describing: value.first))")
             }
