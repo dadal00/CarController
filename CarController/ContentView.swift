@@ -2,23 +2,14 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var bluetoothCentral: BluetoothCentral
-    @ObservedObject var bluetoothPeripheral: BluetoothPeripheral
-    @State private var isBluetoothManager: Bool = true
     
     var body: some View {
-        // Center everything
+        // center everything
         VStack {
-            Spacer() // Push content to center vertically
-            
-            Toggle("Is Bluetooth Manager", isOn: $isBluetoothManager)
-                            .padding()
-            
+            // center vertically
+            Spacer()
             Button(action: {
-                if isBluetoothManager {
-                    bluetoothCentral.updateCar(throttle: 1, steering: 1)
-                } else {
-                    print("Button pressed!")
-                }
+                bluetoothCentral.updateCar(throttle: 1, steering: 1)
             }) {
                 Text("Press Me")
                     .font(.title)
@@ -27,16 +18,18 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
-            
-            Spacer() // Push content to center vertically
+            // center vertically
+            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // Take full screen
-        .background(Color.gray.opacity(0.1)) // Optional: light background
+        // full width
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // light background
+        .background(Color.gray.opacity(0.1))
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView(bluetoothCentral: BluetoothCentral(), bluetoothPeripheral: BluetoothPeripheral())
+        ContentView(bluetoothCentral: BluetoothCentral())
     }
 }

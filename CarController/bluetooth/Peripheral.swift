@@ -12,22 +12,24 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
     
     override init() {
         super.init()
+        
+        if !isPeripheral {
+            return
+        }
+        
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+        print("Initializing peripheral...")
     }
     
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if peripheral.state == .poweredOn {
-            let throttle = CBMutableCharacteristic(type: IDs.throttle,
-                                                   properties: [.write],
-                                                   value: nil,
-                                                   permissions: [.writeable])
-            let steering = CBMutableCharacteristic(type: IDs.steering,
+            let control = CBMutableCharacteristic(type: IDs.control,
                                                    properties: [.write],
                                                    value: nil,
                                                    permissions: [.writeable])
             
             let service = CBMutableService(type: IDs.car, primary: true)
-            service.characteristics = [throttle, steering]
+            service.characteristics = [control]
             peripheralManager.add(service)
             peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [IDs.car]])
         }
@@ -38,13 +40,13 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
         for request in requests {
             guard let value = request.value else { continue }
 
-            if request.characteristic.uuid == IDs.throttle {
-                let throttleValue = value.first
-                print("Received throttle value: \(String(describing: throttleValue))")
-                
-            } else if request.characteristic.uuid == IDs.steering {
-                let steeringValue = value.first
-                print("Received steering value: \(String(describing: steeringValue))")
+            if request.characteristic.uuid == IDs.control {
+                let bytes = [UInt8](value)
+                if bytes.count >= 2 {
+                    print("Throttle: \(bytes[0]), Steering: \(bytes[1])")
+                }
+            } else {
+                print("Received unknown value: \(String(describing: value.first))")
             }
 
             // Respond to the central to confirm write

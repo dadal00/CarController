@@ -11,11 +11,11 @@ import SwiftUI
 struct CarControllerApp: App {
     // state object is used when we want to track changes and show them in the visuals
     @StateObject var bluetoothCentral = BluetoothCentral()
-    @StateObject var bluetoothPeripheral = BluetoothPeripheral()
+    var bluetoothPeripheral = BluetoothPeripheral()
     
     var body: some Scene {
         WindowGroup {
-            ContentView(bluetoothCentral: bluetoothCentral, bluetoothPeripheral: bluetoothPeripheral)
+            ContentView(bluetoothCentral: bluetoothCentral)
         }
     }
 }

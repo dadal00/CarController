@@ -10,12 +10,17 @@ import CoreBluetooth
 class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var manager: CBCentralManager!
     var carPeripheral: CBPeripheral?
-    var throttleCharacteristic: CBCharacteristic?
-    var steeringCharacteristic: CBCharacteristic?
+    var controlCharacteristic: CBCharacteristic?
     
     override init() {
         super.init()
+        
+        if isPeripheral {
+            return
+        }
+        
         manager = CBCentralManager(delegate: self, queue: nil)
+        print("Initializing central...")
     }
     
     // callback once bluetooth on then scan for peripherals
@@ -24,8 +29,10 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         if central.state == .poweredOn {
             print("Bluetooth is ON")
             
-            // only look for my relevant uuid
             manager.scanForPeripherals(withServices: [IDs.car])
+            print("Scanning for peripherals...")
+        } else {
+            print("Bluetooth not available")
         }
     }
     
@@ -34,6 +41,9 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
                         didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
+        //        print("Peripheral: \(peripheral.name ?? "Unknown"), UUID: \(peripheral.identifier)")
+        //        print("Advertisement Data: \(advertisementData)")
+        
         print("Found peripheral: \(peripheral.name ?? "Unknown")")
         
         // save and connect to device
@@ -51,6 +61,28 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         peripheral.discoverServices([IDs.car])
     }
     
+    // called when a peripheral disconnects (or fails)
+    func centralManager(_ central: CBCentralManager,
+                        didDisconnectPeripheral peripheral: CBPeripheral,
+                        error: Error?) {
+        
+        if let error = error {
+            print("Disconnected from peripheral with error: \(error.localizedDescription)")
+        } else {
+            print("Peripheral disconnected normally")
+        }
+        
+        // Clear previous references
+        if self.carPeripheral == peripheral {
+            self.carPeripheral = nil
+            self.controlCharacteristic = nil
+        }
+        
+        // Restart scanning
+        print("Restarting scan...")
+        manager.scanForPeripherals(withServices: [IDs.car])
+    }
+    
     
     /* Peripherals */
     
@@ -59,36 +91,39 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         guard let services = peripheral.services else { return }
         
         for service in services {
-            peripheral.discoverCharacteristics([IDs.throttle, IDs.steering], for: service)
+            peripheral.discoverCharacteristics([IDs.control], for: service)
         }
     }
     
     // identify and assign characteristics
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        guard let characteristics = service.characteristics else { return }
+        guard let characteristics = service.characteristics, self.controlCharacteristic == nil else {
+            return
+        }
         
-        for char in characteristics {
-            switch char.uuid {
-            case IDs.throttle:
-                self.throttleCharacteristic = char
-                print("Found throttle!")
-            case IDs.steering:
-                self.steeringCharacteristic = char
-                print("Found steering!")
+        for characteric in characteristics {
+            switch characteric.uuid {
+            case IDs.control:
+                self.controlCharacteristic = characteric
+                print("Found control!")
             default:
-                print("Unknown characteristic: \(char.uuid)")
+                print("Unknown characteristic: \(characteric.uuid)")
             }
         }
     }
     
-    func sendCarCommand(value: UInt8, characteristic: CBCharacteristic) {
-        if carPeripheral == nil {
-            return
-        }
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        print("Peripheral services modified or lost: \(invalidatedServices.map { $0.uuid.uuidString })")
         
-        // convert to bytes and write
-        let valueBytes = withUnsafeBytes(of: value) { Data($0) }
-        carPeripheral!.writeValue(valueBytes, for: characteristic, type: .withResponse)
+        // If this is the peripheral we care about, treat it as disconnected
+        if peripheral == carPeripheral {
+            print("Services invalidated — clearing peripheral and restarting scan")
+            carPeripheral = nil
+            controlCharacteristic = nil
+            
+            // Stop any ongoing connection attempts
+            manager.cancelPeripheralConnection(peripheral)
+        }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -100,12 +135,18 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
     
     func updateCar(throttle: UInt8, steering: UInt8) {
-        if throttleCharacteristic == nil || steeringCharacteristic == nil {
-            print("throttle or steering not found!")
+        if carPeripheral == nil {
+            print("peripheral not found!")
             return
         }
         
-        sendCarCommand(value: throttle, characteristic: throttleCharacteristic!)
-        sendCarCommand(value: steering, characteristic: steeringCharacteristic!)
+        if controlCharacteristic == nil {
+            print("control not found!")
+            return
+        }
+        
+        let command: [UInt8] = [throttle, steering]
+        let data = Data(command)
+        carPeripheral!.writeValue(data, for: controlCharacteristic!, type: .withResponse)
     }
 }
