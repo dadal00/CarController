@@ -7,7 +7,7 @@
 
 import CoreBluetooth
 
-let isPeripheral = false
+let isPeripheral = true
 
 enum IDs {
     // uuids must be hex, 4 byte or 16 byte

@@ -24,9 +24,9 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if peripheral.state == .poweredOn {
             let control = CBMutableCharacteristic(type: IDs.control,
-                                                   properties: [.write],
-                                                   value: nil,
-                                                   permissions: [.writeable])
+                                                  properties: [.write],
+                                                  value: nil,
+                                                  permissions: [.writeable])
             
             let service = CBMutableService(type: IDs.car, primary: true)
             service.characteristics = [control]
@@ -39,7 +39,7 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
                            didReceiveWrite requests: [CBATTRequest]) {
         for request in requests {
             guard let value = request.value else { continue }
-
+            
             if request.characteristic.uuid == IDs.control {
                 let bytes = [UInt8](value)
                 if bytes.count >= 2 {
@@ -48,7 +48,7 @@ class BluetoothPeripheral: NSObject, ObservableObject, CBPeripheralManagerDelega
             } else {
                 print("Received unknown value: \(String(describing: value.first))")
             }
-
+            
             // Respond to the central to confirm write
             peripheralManager.respond(to: request, withResult: .success)
         }

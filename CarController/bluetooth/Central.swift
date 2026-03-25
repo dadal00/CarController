@@ -9,7 +9,8 @@ import CoreBluetooth
 
 class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var manager: CBCentralManager!
-    var carPeripheral: CBPeripheral?
+    
+    @Published var carPeripheral: CBPeripheral?
     var controlCharacteristic: CBCharacteristic?
     
     override init() {

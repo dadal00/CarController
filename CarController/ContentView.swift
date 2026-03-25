@@ -1,30 +1,40 @@
+import UIKit
+
+extension UIDevice {
+    var isLandscape: Bool {
+        orientation == .landscapeLeft || orientation == .landscapeRight
+    }
+}
+
 import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var bluetoothCentral: BluetoothCentral
     
+    @State private var throttle: UInt8 = 0
+    @State private var steering: UInt8 = 0
+    
     var body: some View {
-        // center everything
-        VStack {
-            // center vertically
-            Spacer()
-            Button(action: {
-                bluetoothCentral.updateCar(throttle: 1, steering: 1)
-            }) {
-                Text("Press Me")
-                    .font(.title)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            // center vertically
-            Spacer()
+        HStack {
+            JoystickView(axis: .vertical, value: $throttle).frame(maxWidth: .infinity)
+            
+            Text(bluetoothCentral.carPeripheral != nil ? "Connected" : "Disconnected")
+                .foregroundColor(.white)
+                .padding(8)
+                .background(bluetoothCentral.carPeripheral != nil ? Color.green : Color.red)
+                .cornerRadius(8)
+            
+            JoystickView(axis: .horizontal, value: $steering).frame(maxWidth: .infinity)
         }
-        // full width
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // light background
-        .background(Color.gray.opacity(0.1))
+        .padding()
+        .onChange(of: throttle) { t in
+            print("Throttle changed: \(t)")
+            bluetoothCentral.updateCar(throttle: t, steering: steering)
+        }
+        .onChange(of: steering) { s in
+            print("Steering changed: \(s)")
+            bluetoothCentral.updateCar(throttle: throttle, steering: s)
+        }
     }
 }
 

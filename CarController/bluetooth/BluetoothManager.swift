@@ -12,16 +12,15 @@ import CoreBluetooth
 // cbcentral is the central bluetooth manager
 // peripheral is needed when we want to connect + write to some device
 class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
-
     var centralManager: CBCentralManager!
     var connectedPeripheral: CBPeripheral?
     var targetCharacteristic: CBCharacteristic?
-
+    
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
-
+    
     // required function to be a manager delegate
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
