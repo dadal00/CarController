@@ -144,7 +144,7 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         }
     }
     
-    func updateCar(throttle: UInt8, steering: UInt8) {
+    func updateCar(magnitude: UInt8, angle: UInt16) {
         if carPeripheral == nil {
             print("peripheral not found!")
             return
@@ -155,7 +155,10 @@ class BluetoothCentral: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             return
         }
         
-        let command: [UInt8] = [throttle, steering]
+        var angleLE = angle.littleEndian
+        let bytes = withUnsafeBytes(of: &angleLE) { Array($0) }
+
+        let command: [UInt8] = [magnitude] + bytes
         let data = Data(command)
         carPeripheral!.writeValue(data, for: controlCharacteristic!, type: .withoutResponse)
     }

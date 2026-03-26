@@ -8,11 +8,10 @@
 import SwiftUI
 
 struct JoystickView: View {
-    // .horizontal or .vertical
-    var axis: Axis
+    @Binding var magnitude: UInt8
+    @Binding var angle: UInt16
     
-    @Binding var value: UInt8
-    @State private var dragOffset: CGFloat = 0
+    @State private var dragOffset: CGSize = .zero
     
     var body: some View {
         GeometryReader { geo in
@@ -28,30 +27,45 @@ struct JoystickView: View {
                 Circle()
                     .fill(Color.blue)
                     .frame(width: radius, height: radius)
-                    .offset(
-                        x: axis == .horizontal ? dragOffset : 0,
-                        y: axis == .vertical ? dragOffset : 0
-                    )
+                    .offset(dragOffset)
                     .gesture(
                         DragGesture()
                             .onChanged { gesture in
-                                // get drag amount in the intended axis
-                                let translation = axis == .horizontal ? gesture.translation.width : gesture.translation.height
+                                let dx = gesture.translation.width
+                                let dy = gesture.translation.height
                                 
-                                // clamp within radius
-                                let clamped = max(min(translation, radius), -radius)
-                                dragOffset = clamped
+                                // distance from center
+                                let distance = sqrt(dx * dx + dy * dy)
                                 
-                                // normalize to UInt8 0-255, 128 is center
-                                let normalized = UInt8((clamped / radius * 127) + 128)
-                                value = normalized
+                                // clamp inside circle
+                                let clampedDistance = min(distance, radius)
+                                
+                                let angleRad = atan2(dy, dx)
+                                
+                                let clampedX = cos(angleRad) * clampedDistance
+                                let clampedY = sin(angleRad) * clampedDistance
+                                
+                                dragOffset = CGSize(width: clampedX, height: clampedY)
+                                
+                                // --- magnitude (0–255)
+                                let mag = clampedDistance / radius
+                                magnitude = UInt8(mag * 255)
+                                
+                                // --- angle (0–359)
+                                var deg = angleRad * 180 / .pi
+                                
+                                // convert to 0–360
+                                if deg < 0 { deg += 360 }
+                                
+                                angle = UInt16(deg)
                             }
                             .onEnded { _ in
-                                dragOffset = 0
-                                value = 128
+                                dragOffset = .zero
+                                magnitude = 0
+                                angle = 0
                             }
                     )
-            }
+            }.rotationEffect(.degrees(-90))
         }
         .frame(width: 300, height: 300)
     }

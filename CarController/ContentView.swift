@@ -1,9 +1,6 @@
-import UIKit
-
-extension UIDevice {
-    var isLandscape: Bool {
-        orientation == .landscapeLeft || orientation == .landscapeRight
-    }
+struct ControlState: Equatable {
+    let magnitude: UInt8
+    let angle: UInt16
 }
 
 import SwiftUI
@@ -11,29 +8,23 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var bluetoothCentral: BluetoothCentral
     
-    @State private var throttle: UInt8 = 0
-    @State private var steering: UInt8 = 0
+    @State private var magnitude: UInt8 = 0
+    @State private var angle: UInt16 = 0
     
     var body: some View {
-        HStack {
-            JoystickView(axis: .vertical, value: $throttle).frame(maxWidth: .infinity)
+        VStack {
+            JoystickView(magnitude: $magnitude, angle: $angle).frame(maxWidth: .infinity)
             
             Text(bluetoothCentral.carPeripheral != nil ? "Connected" : "Disconnected")
                 .foregroundColor(.white)
                 .padding(8)
                 .background(bluetoothCentral.carPeripheral != nil ? Color.green : Color.red)
                 .cornerRadius(8)
-            
-            JoystickView(axis: .horizontal, value: $steering).frame(maxWidth: .infinity)
         }
         .padding()
-        .onChange(of: throttle) { t in
-            print("Throttle changed: \(t)")
-            bluetoothCentral.updateCar(throttle: t, steering: steering)
-        }
-        .onChange(of: steering) { s in
-            print("Steering changed: \(s)")
-            bluetoothCentral.updateCar(throttle: throttle, steering: s)
+        .onChange(of: ControlState(magnitude: magnitude, angle: angle)) { controlState in
+            print("Control changed: \(controlState.magnitude), \(controlState.angle)")
+            bluetoothCentral.updateCar(magnitude: controlState.magnitude, angle: controlState.angle)
         }
     }
 }
